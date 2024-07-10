@@ -5,11 +5,6 @@ pub struct Letter{
     modifiers: Vec<Modifier>,
 }
 
-pub struct LetterPos {
-    row: usize,
-    col: usize
-}
-
 #[derive(Clone)]
 pub enum Modifier{
     Default,
@@ -42,15 +37,15 @@ impl Letter{
 
 
         for val in vals.skip(1) {
-            if (val == "dl") {
+            if val == "dl" {
                 modifiers.push(Modifier::DoubleLetter);
             }
 
-            if (val == "tl") {
+            if val == "tl" {
                 modifiers.push(Modifier::TripleLetter);
             }
 
-            if (val == "dw") {
+            if val == "dw" {
                 modifiers.push(Modifier::DoubleWord);
             }
 

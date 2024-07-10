@@ -7,7 +7,8 @@ use crate::letter;
 
 pub struct Board {
     size: usize,
-    grid: Vec<Vec<Letter>>
+    grid: Vec<Vec<Letter>>,
+    swaps: usize
 }
 
 struct DoubleStack<T : Copy> {
@@ -24,7 +25,8 @@ enum StackElement<'a> {
 pub struct LetterSpace {
     character: char,
     row: usize,
-    col: usize
+    col: usize,
+    swaps: usize
 }
 
 
@@ -51,7 +53,7 @@ impl Board{
             letter_data.push(new_row);
         }
     
-        Board{size: 5, grid: letter_data}
+        Board{size: 5, grid: letter_data, swaps: 0}
     }
 
     pub fn build_board_from_file(filename: &str) -> Board {
@@ -67,21 +69,23 @@ impl Board{
             board_vec.push(new_row);
         }
 
-        Board {size, grid: board_vec}
+        Board {size, grid: board_vec, swaps: 0}
     }
 
     pub fn get_longest_word(&self, tree: &WordTree) -> (String, usize) {
 
         let words = self.get_all_possible_words(tree);
         let mut longest = String::from("ap");
+        let mut longest_cells: &Vec<LetterSpace> = &Vec::new();
 
-        for word in words {
+        for word in &words {
             if word.len() > longest.len() {
                 longest = get_word_from_letter_spaces(&word);
+                longest_cells = &word;
             }
         }
 
-        let total = get_point_total_str(&longest);
+        let total = self.get_point_total(longest_cells);
 
         (longest, total)
     }
@@ -103,6 +107,10 @@ impl Board{
         }
 
         (cur_word, highest_point_total)
+    }
+
+    pub fn set_swaps(&mut self, swaps: usize) {
+        self.swaps = swaps;
     }
 
     fn get_point_total(&self, word: &Vec<LetterSpace>) -> usize {
@@ -158,7 +166,7 @@ impl Board{
 
         for i in 0..self.grid.len() {
             for j in 0..self.grid[i].len() {
-                word_list.append(&mut self.get_all_words_from_pos(tree, i, j));
+                word_list.append(&mut self.get_all_words_from_pos(tree, i, j, self.swaps));
             }
         }
         //word_list.append(&mut self.get_all_words_from_pos(tree, 0,  0));
@@ -169,8 +177,10 @@ impl Board{
     /*
         First: simple and slow implementation, use is_word_in_tree to check on all words,
         then change to tree traversal with stack
+
+        This really needs to be refactored
      */
-    fn get_all_words_from_pos(&self, tree: &WordTree, start_row: usize, start_col: usize) -> Vec<Vec<LetterSpace>> {
+    fn get_all_words_from_pos(&self, tree: &WordTree, start_row: usize, start_col: usize, swaps: usize) -> Vec<Vec<LetterSpace>> {
         let mut stack: DoubleStack<StackElement> = DoubleStack::new();
         let mut words: Vec<Vec<LetterSpace>> = Vec::new();
         let mut cur_word_grid: Vec<LetterSpace> = Vec::new();
@@ -183,7 +193,8 @@ impl Board{
         stack.push_simple(StackElement::LetterStep( LetterSpace {
             character: self.grid[start_row][start_col].character,
             row: start_row,
-            col: start_col
+            col: start_col,
+            swaps
         }));
 
         let pos_mods: Vec<isize> = vec![-1, 0, 1];
@@ -202,7 +213,8 @@ impl Board{
                     cur_word_grid.push( LetterSpace {
                         character: cell.character,
                         row: cell.row,
-                        col: cell.col
+                        col: cell.col,
+                        swaps: cell.swaps()
                     });
 
                     let temp_word = &get_word_from_letter_spaces(&cur_word_grid);
@@ -249,17 +261,26 @@ impl Board{
                                 None => continue
                             }
 
+                            /*
+                                Meat of letter swaps. For every neighbor, if we have a swap on this cell, add every child
+                                of the current node to the stack at the position of the neighbor, simulating traversal
+                                as if we made that swap.
+                             */
+                            if cell.swaps > 0 {
+                                add_swap_elements(cur_node, &mut stack, new_row, new_col, cell.swaps - 1);
+                            }
+                            
                             let to_add = StackElement::LetterStep(LetterSpace {
                                 character: grid[new_row][new_col].character,
                                 row: new_row,
-                                col: new_col
+                                col: new_col,
+                                swaps: cell.swaps
                             });
 
                             let mut is_in_so_far = false;
 
                             for letter in &cur_word_grid {
-                                if letter.character() == grid[new_row][new_col].character
-                                && letter.row == new_row && letter.col == new_col {
+                                if letter.row == new_row && letter.col == new_col {
                                     is_in_so_far = true;
                                 }
                             }
@@ -356,6 +377,10 @@ impl LetterSpace {
     pub fn col(&self) -> usize {
         self.col
     }
+
+    pub fn swaps(&self) -> usize {
+        self.swaps
+    }
 }
 
 impl fmt::Display for Board{
@@ -440,4 +465,20 @@ fn get_point_total_str(word: &str) -> usize {
     }
 
     points
+}
+
+fn add_swap_elements(node: &LetterNode, stack: &mut DoubleStack<StackElement>, row: usize, col: usize, swaps: usize) {
+    let children = node.children();
+
+    for child in children {
+        stack.push_simple(StackElement::LetterStep(LetterSpace {
+            character: match child.letter() {
+                LetterState::Present(character) => character.clone(),
+                LetterState::Root => panic!("This should never happen.")
+            },
+            row,
+            col,
+            swaps
+        }));
+    }
 }
