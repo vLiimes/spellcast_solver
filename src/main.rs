@@ -16,12 +16,18 @@ fn main() {
     let longest = board.get_longest_word(&tree);
     let best = board.get_best_word(&tree);
 
-    println!("Longest: {} for {} points", longest.0, longest.1);
-    println!("Best: {} for {} points\n", best.0, best.1);
+    println!("Longest: {} for {} points\n", longest.0, longest.1);
+    println!("{}", best.0);
 
     if best.1 < 30 {
         println!("Recommendation: Reshuffle.");
     } 
+
+
+    println!("Press Enter to exit.");
+
+    let mut dummy = String::new();
+    io::stdin().read_line(&mut dummy).expect("failed to exit");
 }
 
 

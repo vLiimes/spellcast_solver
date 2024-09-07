@@ -91,23 +91,54 @@ impl Board{
     }
 
     pub fn get_best_word(&self, tree: &WordTree) -> (String, usize) {
+        let best = self.get_best_word_spaces(tree);
+        let word = best.0;
+        let word_str = get_word_from_letter_spaces(&word);
+        let grid = &self.grid;
+
+        let mut result = format!("Best: {0} for {1} points\n", word_str, best.1);
+
+
+        print_letter_spaces_for_word(&word);
+        
+        for letter in word {
+            let original = grid[letter.row][letter.col].character;
+            
+            if letter.character() != original {
+                result.push_str(&format!("Replacement of {0} with {1} at [{2}, {3}]\n", original, letter.character(), letter.row + 1, letter.col + 1));
+            }
+        }
+
+        
+
+        (result, best.1)
+    }
+
+    pub fn get_best_word_string(&self, tree: &WordTree) -> (String, usize) {
+        let result = self.get_best_word_spaces(tree);
+
+        (get_word_from_letter_spaces(&result.0), result.1)
+    }
+
+    fn get_best_word_spaces(&self, tree: &WordTree) -> (Vec<LetterSpace>, usize) {
         let words = self.get_all_possible_words(tree);
         
         let mut highest_point_total = 0;
         let mut point_total_temp;
-        let mut cur_word = String::from("ap");
+        let mut cur_word: &Vec<LetterSpace> = &Vec::new();
 
-        for word in words {
+        for word in &words {
             point_total_temp = self.get_point_total(&word);
 
             if point_total_temp > highest_point_total {
                 highest_point_total = point_total_temp;
-                cur_word = get_word_from_letter_spaces(&word);
+                cur_word = &word;
             }
         }
 
-        (cur_word, highest_point_total)
+        (cur_word.to_vec(), highest_point_total)
     }
+
 
     pub fn set_swaps(&mut self, swaps: usize) {
         self.swaps = swaps;
@@ -261,14 +292,6 @@ impl Board{
                                 None => continue
                             }
 
-                            /*
-                                Meat of letter swaps. For every neighbor, if we have a swap on this cell, add every child
-                                of the current node to the stack at the position of the neighbor, simulating traversal
-                                as if we made that swap.
-                             */
-                            if cell.swaps > 0 {
-                                add_swap_elements(cur_node, &mut stack, new_row, new_col, cell.swaps - 1);
-                            }
                             
                             let to_add = StackElement::LetterStep(LetterSpace {
                                 character: grid[new_row][new_col].character,
@@ -283,6 +306,15 @@ impl Board{
                                 if letter.row == new_row && letter.col == new_col {
                                     is_in_so_far = true;
                                 }
+                            }
+
+                            /*
+                                Meat of letter swaps. For every neighbor, if we have a swap on this cell, add every child
+                                of the current node to the stack at the position of the neighbor, simulating traversal
+                                as if we made that swap.
+                             */
+                            if cell.swaps > 0 && !is_in_so_far{
+                                add_swap_elements(cur_node, &mut stack, new_row, new_col, cell.swaps - 1);
                             }
 
                             if !is_in_so_far {
@@ -480,5 +512,11 @@ fn add_swap_elements(node: &LetterNode, stack: &mut DoubleStack<StackElement>, r
             col,
             swaps
         }));
+    }
+}
+
+fn print_letter_spaces_for_word(word: &Vec<LetterSpace>) {
+    for letter in word {
+        println!("{0} at {1}, {2}", letter.character(), letter.row() + 1, letter.col() + 1);
     }
 }
