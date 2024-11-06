@@ -3,7 +3,8 @@ use crate::{letter::{Letter, Modifier}, word_tree::WordTree};
 use std::fs::read_to_string;
 use crate::word_tree::*;
 use crate::letter;
-
+use std::thread;
+use crossbeam::{self, thread::ScopedJoinHandle};
 
 pub struct Board {
     size: usize,
@@ -121,7 +122,7 @@ impl Board{
     }
 
     fn get_best_word_spaces(&self, tree: &WordTree) -> (Vec<LetterSpace>, usize) {
-        let words = self.get_all_possible_words(tree);
+        let words = self.get_all_possible_words_threaded(tree);
         
         let mut highest_point_total = 0;
         let mut point_total_temp;
@@ -186,11 +187,6 @@ impl Board{
         points
     }
 
-    /*
-        Kind of complicated. Iterate through each cell on the board,
-        and start a traversal through all possible letter combinations.
-        The way this works is as follows: 
-     */
     pub fn get_all_possible_words(&self, tree: &WordTree) -> Vec<Vec<LetterSpace>> {
         let mut word_list: Vec<Vec<LetterSpace>> = Vec::new();
 
@@ -200,6 +196,40 @@ impl Board{
                 word_list.append(&mut self.get_all_words_from_pos(tree, i, j, self.swaps));
             }
         }
+        //word_list.append(&mut self.get_all_words_from_pos(tree, 0,  0));
+
+        return word_list;
+    }
+
+    /*
+        Kind of complicated. Iterate through each cell on the board,
+        and start a traversal through all possible letter combinations.
+        The way this works is as follows: 
+     */
+    pub fn get_all_possible_words_threaded(&self, tree: &WordTree) -> Vec<Vec<LetterSpace>> {
+        let mut word_list: Vec<Vec<LetterSpace>> = Vec::new();
+
+        crossbeam::scope(|scope| {
+            let mut handles: Vec<ScopedJoinHandle<Vec<Vec<LetterSpace>>>> = Vec::new();
+
+            for i in 0..self.grid.len() {
+                for j in 0..self.grid[i].len() {
+                    //word_list.append(&mut self.get_all_words_from_pos(tree, i, j, self.swaps));
+                    handles.push(scope.spawn(move |_| {
+                        self.get_all_words_from_pos(tree, i, j, self.swaps)
+                    }));
+                }
+            }
+
+            for handle in handles {
+                word_list.append(&mut handle.join().unwrap());
+            }
+
+
+        }).unwrap();
+
+
+        
         //word_list.append(&mut self.get_all_words_from_pos(tree, 0,  0));
 
         return word_list;
