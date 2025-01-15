@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use crate::errors;
 
 pub struct Letter{
     pub character: char,
@@ -25,10 +26,20 @@ impl Letter{
         &self.modifiers
     }
 
-    pub fn build_letter_from_input_word(word: &str) -> Letter {
+    pub fn build_letter_from_input_word(word: &str) -> Result<Letter, String> {
         let first_char = word.chars().nth(0).unwrap();
+
+        let first_char = match word.chars().nth(0) {
+            Some(this_char) => this_char,
+            None => {
+                return Err(format!(
+                    "Unexpected empty space in board."
+                ));
+            }
+        };
+
         if !(word.chars().count() > 1) {
-            return Letter { character: first_char, modifiers: Vec::new() };
+            return Ok(Letter { character: first_char, modifiers: Vec::new() });
         }
 
         let mut modifiers: Vec<Modifier> = Vec::new();
@@ -51,7 +62,7 @@ impl Letter{
 
         }
 
-        Letter { character: first_char, modifiers }
+        Ok(Letter { character: first_char, modifiers })
     }
 }
 

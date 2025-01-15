@@ -32,45 +32,30 @@ pub struct LetterSpace {
 
 
 impl Board{
-    pub fn make_example_board() -> Board{
-        let letters = vec![
-            vec!['i', 'i', 'e', 'k',  'm'],
-            vec!['a', 'n', 'l', 'e', 'r'],
-            vec!['t', 'e', 'c', 'a', 'z'],
-            vec!['n', 'g', 'o', 's', 'n'],
-            vec!['r', 'o', 'r', 'l', 'f']
-        ];
-    
-        let mut letter_data = Vec::new();
-    
-        for row in letters{
-    
-            let mut new_row = Vec::new();
-    
-            for letter in row{
-                new_row.push(Letter::new(letter, &vec![Modifier::Default]));
-            }
-    
-            letter_data.push(new_row);
-        }
-    
-        Board{size: 5, grid: letter_data, swaps: 0}
+    pub fn build_board_from_file(filename: &str) -> Board {
+
+        Board::build_board_from_str(&read_to_string(filename).unwrap())
     }
 
-    pub fn build_board_from_file(filename: &str) -> Board {
+    // TODO: Remove any panics.
+    pub fn build_board_from_str(board: &str) -> Result<Board, String>  {
         let mut board_vec: Vec<Vec<Letter>> = Vec::new();
-        let read = read_to_string(filename).unwrap();
-        let size = read.lines().count();
+        let size = board.lines().count();
 
-        for line in read.lines() {
+        for line in board.lines() {
             let mut new_row = Vec::new();
-            for space in line.split(' ') {
-                new_row.push(Letter::build_letter_from_input_word(space));
+            for space in line.split_ascii_whitespace() {
+                match Letter::build_letter_from_input_word(space) {
+                    Ok(letter) => new_row.push(letter),
+                    // For now just pretend it's fine unless this causes
+                    // huge issues. On user to notice if it's wrong
+                    Err(e) => ()
+                }
             }
             board_vec.push(new_row);
         }
 
-        Board {size, grid: board_vec, swaps: 0}
+        Ok(Board {size, grid: board_vec, swaps: 0})
     }
 
     pub fn get_longest_word(&self, tree: &WordTree) -> (String, usize) {
@@ -196,7 +181,6 @@ impl Board{
                 word_list.append(&mut self.get_all_words_from_pos(tree, i, j, self.swaps));
             }
         }
-        //word_list.append(&mut self.get_all_words_from_pos(tree, 0,  0));
 
         return word_list;
     }
@@ -214,7 +198,6 @@ impl Board{
 
             for i in 0..self.grid.len() {
                 for j in 0..self.grid[i].len() {
-                    //word_list.append(&mut self.get_all_words_from_pos(tree, i, j, self.swaps));
                     handles.push(scope.spawn(move |_| {
                         self.get_all_words_from_pos(tree, i, j, self.swaps)
                     }));
