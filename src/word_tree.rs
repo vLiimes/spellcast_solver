@@ -1,6 +1,5 @@
 use std::fmt;
 use std::fs::read_to_string;
-use std::io::Write;
 
 
 pub struct WordTree {
@@ -157,7 +156,7 @@ impl WordTree {
 
 impl fmt::Display for WordTree {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result{
-        let mut root = &self.root;
+        let root = &self.root;
 
         let mut i = 1;
 

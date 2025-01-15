@@ -3,7 +3,6 @@ use crate::{letter::{Letter, Modifier}, word_tree::WordTree};
 use std::fs::read_to_string;
 use crate::word_tree::*;
 use crate::letter;
-use std::thread;
 use crossbeam::{self, thread::ScopedJoinHandle};
 
 pub struct Board {
@@ -38,7 +37,7 @@ impl Board{
     }
 
     // TODO: Remove any panics.
-    pub fn build_board_from_str(board: &str) -> Result<Board, String>  {
+    pub fn build_board_from_str(board: &str) -> Board  {
         let mut board_vec: Vec<Vec<Letter>> = Vec::new();
         let size = board.lines().count();
 
@@ -49,13 +48,13 @@ impl Board{
                     Ok(letter) => new_row.push(letter),
                     // For now just pretend it's fine unless this causes
                     // huge issues. On user to notice if it's wrong
-                    Err(e) => ()
+                    Err(_) => ()
                 }
             }
             board_vec.push(new_row);
         }
 
-        Ok(Board {size, grid: board_vec, swaps: 0})
+        Board {size, grid: board_vec, swaps: 0}
     }
 
     pub fn get_longest_word(&self, tree: &WordTree) -> (String, usize) {
@@ -405,6 +404,7 @@ impl<T: Copy> DoubleStack<T> {
         self.stack.len() <= 0
     }
 
+    #[allow(dead_code)]
     pub fn len(&self) -> usize {
         self.stack.len()
     }
@@ -501,6 +501,7 @@ fn get_word_from_letter_spaces(letters: &Vec<LetterSpace>) -> String{
     result
 }
 
+#[allow(dead_code)]
 fn get_point_total_str(word: &str) -> usize {
     let letter_score_map = letter::get_letter_value_map();
     let mut points: usize = 0;

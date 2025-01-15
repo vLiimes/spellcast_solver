@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use crate::errors;
 
 pub struct Letter{
     pub character: char,
@@ -27,8 +26,6 @@ impl Letter{
     }
 
     pub fn build_letter_from_input_word(word: &str) -> Result<Letter, String> {
-        let first_char = word.chars().nth(0).unwrap();
-
         let first_char = match word.chars().nth(0) {
             Some(this_char) => this_char,
             None => {
