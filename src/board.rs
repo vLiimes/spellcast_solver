@@ -8,7 +8,8 @@ use crossbeam::{self, thread::ScopedJoinHandle};
 pub struct Board {
     size: usize,
     grid: Vec<Vec<Letter>>,
-    swaps: usize
+    swaps: usize,
+    multithreading: bool
 }
 
 struct DoubleStack<T : Copy> {
@@ -54,7 +55,7 @@ impl Board{
             board_vec.push(new_row);
         }
 
-        Board {size, grid: board_vec, swaps: 0}
+        Board {size, grid: board_vec, swaps: 0, multithreading: false}
     }
 
     pub fn get_longest_word(&self, tree: &WordTree) -> (String, usize) {
@@ -106,7 +107,12 @@ impl Board{
     }
 
     fn get_best_word_spaces(&self, tree: &WordTree) -> (Vec<LetterSpace>, usize) {
-        let words = self.get_all_possible_words_threaded(tree);
+        let words = if self.multithreading {
+            self.get_all_possible_words_threaded(tree)
+        } else {
+            self.get_all_possible_words(tree)
+        };
+        
         
         let mut highest_point_total = 0;
         let mut point_total_temp;
@@ -127,6 +133,10 @@ impl Board{
 
     pub fn set_swaps(&mut self, swaps: usize) {
         self.swaps = swaps;
+    }
+
+    pub fn set_multithreading(&mut self, use_mt: bool) {
+        self.multithreading = use_mt;
     }
 
     fn get_point_total(&self, word: &Vec<LetterSpace>) -> usize {
@@ -191,7 +201,6 @@ impl Board{
      */
     pub fn get_all_possible_words_threaded(&self, tree: &WordTree) -> Vec<Vec<LetterSpace>> {
         let mut word_list: Vec<Vec<LetterSpace>> = Vec::new();
-
         crossbeam::scope(|scope| {
             let mut handles: Vec<ScopedJoinHandle<Vec<Vec<LetterSpace>>>> = Vec::new();
 
