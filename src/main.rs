@@ -3,7 +3,7 @@ use spellcast_solver::board::Board;
 use std::io;
 
 fn main() {
-    let tree = WordTree::new("./data/dictionaries/dictionary.txt");
+    let tree = WordTree::build_from_file("./data/dictionaries/dictionary.txt");
     let mut board = Board::build_board_from_file("./data/boards/basic_board.txt");
 
     println!("Number of swaps?");
