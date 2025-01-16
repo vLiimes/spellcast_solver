@@ -25,9 +25,11 @@ pub enum NodeState{
 }
 
 impl WordTree {
-    pub fn new(file_name: &str) -> WordTree {
-        // Implement file reading later
+    pub fn build_from_file(file_name: &str) -> WordTree {
+        WordTree::build_from_str(&read_to_string(file_name).unwrap())
+    }
 
+    pub fn build_from_str(input: &str) -> WordTree {
         let root = LetterNode{
             letter: LetterState::Root,
             children: Vec::new(),
@@ -39,15 +41,13 @@ impl WordTree {
             root: root
         };
 
-        let read = read_to_string(file_name).unwrap();
-
-        let words = read.lines();
+        let words = input.lines();
 
         for word in words{
             tree.add_word_to_tree(&word.to_lowercase());
         }
 
-        tree 
+        tree
     }
 
     /*
