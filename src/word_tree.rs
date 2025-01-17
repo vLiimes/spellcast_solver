@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_words_in_tree_simple(){
-        let tree = WordTree::new("./data/dictionaries/test_1.txt");
+        let tree = WordTree::build_from_file("./data/dictionaries/test_1.txt");
         
 
         assert!(tree.is_word_in_tree("obfuscate"));
@@ -259,7 +259,7 @@ mod tests {
 
     #[test]
     fn test_words_big(){
-        let tree =  WordTree::new("./data/dictionaries/dictionary.txt");
+        let tree =  WordTree::build_from_file("./data/dictionaries/dictionary.txt");
 
         assert!(tree.is_word_in_tree("finch"));
         assert!(tree.is_word_in_tree("gold"));
