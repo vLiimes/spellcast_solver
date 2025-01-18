@@ -4,22 +4,15 @@ use std::fs::read_to_string;
 use crate::word_tree::*;
 use crate::letter;
 use crossbeam::{self, thread::ScopedJoinHandle};
+use crate::double_stack::DoubleStack;
+use crate::word_result::{WordResult, Swap};
+
 
 pub struct Board {
     size: usize,
     grid: Vec<Vec<Letter>>,
     swaps: usize,
     multithreading: bool
-}
-
-struct DoubleStack<T : Copy> {
-    stack: Vec<Vec<T>>
-}
-
-#[derive(Clone, Copy)]
-enum StackElement<'a> {
-    LetterStep(LetterSpace),
-    RemoveOp(&'a LetterNode)
 }
 
 #[derive(Clone, Copy)]
@@ -30,6 +23,11 @@ pub struct LetterSpace {
     swaps: usize
 }
 
+#[derive(Clone, Copy)]
+pub enum StackElement<'a> {
+    LetterStep(LetterSpace),
+    RemoveOp(&'a LetterNode)
+}
 
 impl Board{
     pub fn build_board_from_file(filename: &str) -> Board {
@@ -58,7 +56,7 @@ impl Board{
         Board {size, grid: board_vec, swaps: 0, multithreading: false}
     }
 
-    pub fn get_longest_word(&self, tree: &WordTree) -> (String, usize) {
+    pub fn get_longest_word(&self, tree: &WordTree) -> WordResult {
 
         let words = self.get_all_possible_words(tree);
         let mut longest = String::from("ap");
@@ -73,31 +71,35 @@ impl Board{
 
         let total = self.get_point_total(longest_cells);
 
-        (longest, total)
+        WordResult::new(longest, total, Vec::new())
     }
 
-    pub fn get_best_word(&self, tree: &WordTree) -> (String, usize) {
+    pub fn get_best_word(&self, tree: &WordTree) -> WordResult {
         let best = self.get_best_word_spaces(tree);
-        let word = best.0;
+        let word: Vec<LetterSpace> = best.0;
         let word_str = get_word_from_letter_spaces(&word);
         let grid = &self.grid;
 
-        let mut result = format!("Best: {0} for {1} points\n", word_str, best.1);
+        //print_letter_spaces_for_word(&word);
 
-
-        print_letter_spaces_for_word(&word);
+        let mut swaps: Vec<Swap> = Vec::new();
         
         for letter in word {
             let original = grid[letter.row][letter.col].character;
             
             if letter.character() != original {
-                result.push_str(&format!("Replacement of {0} with {1} at [{2}, {3}]\n", original, letter.character(), letter.row + 1, letter.col + 1));
+                swaps.push(Swap::new(original, letter.character(), letter.row + 1, letter.col + 1));
             }
         }
 
         
 
-        (result, best.1)
+        //(result, best.1);
+        WordResult::new(word_str, best.1, swaps)
+    }
+
+    pub fn get_best_words(&self, tree: &WordTree, count: usize) -> Vec<WordResult> {
+        Vec::new()
     }
 
     pub fn get_best_word_string(&self, tree: &WordTree) -> (String, usize) {
@@ -356,87 +358,6 @@ impl Board{
     }
 }
 
-impl<T: Copy> DoubleStack<T> {
-    pub fn new() -> DoubleStack<T> {
-        DoubleStack {
-            stack: vec![Vec::new()]
-        }
-    }
-
-    /*
-        Simplest case, push onto whatever is the most recent
-        stack frame
-     */
-    pub fn push_simple(&mut self, value: T) {
-        let top_index = self.stack.len() - 1;
-        
-        let top = &mut self.stack[top_index];
-
-        top.push(value);
-    }
-
-    /*
-        Push the value by creating a new stack frame, and 
-        add it as an element
-     */
-    pub fn push_new_layer(&mut self, value: T) {
-        let new_layer = vec![value];
-
-        if self.stack.len() == 1 && self.stack[0].len() == 0 {
-            self.stack.pop();
-        }
-
-        self.stack.push(new_layer);
-    }
-
-    /*
-        No case for wanting to pop an entire frame at once,
-        since it may lose data.
-
-        When a frame loses all elements, want to destroy
-        the stack frame of empty elements.
-     */
-    pub fn pop(&mut self) -> T {
-        let top_index = self.stack.len() - 1;
-
-        let val = self.stack[top_index].pop().unwrap();
-
-        // If that made stack frame empty, remove it
-        if self.stack[top_index].len() == 0 {
-            self.stack.pop();
-        }
-
-        val
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.stack.len() <= 0
-    }
-
-    #[allow(dead_code)]
-    pub fn len(&self) -> usize {
-        self.stack.len()
-    }
-}
-
-impl LetterSpace {
-    pub fn character(&self) -> char {
-        self.character
-    }
-
-    pub fn row(&self) -> usize {
-        self.row
-    }
-
-    pub fn col(&self) -> usize {
-        self.col
-    }
-
-    pub fn swaps(&self) -> usize {
-        self.swaps
-    }
-}
-
 impl fmt::Display for Board{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 
@@ -473,22 +394,21 @@ impl fmt::Display for Board{
     }
 }
 
-impl<T: Copy + fmt::Display> fmt::Display for DoubleStack<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut stack_str = String::new();
+impl LetterSpace {
+    pub fn character(&self) -> char {
+        self.character
+    }
 
-        let mut i = 0;
-        for frame in &self.stack {
-            stack_str.push_str(&format!("LAYER: {i} ["));
-            for item in frame {
-                stack_str.push_str(&format!("{item}, "));
-            }
-            stack_str.push_str("] \n");
+    pub fn row(&self) -> usize {
+        self.row
+    }
 
-            i = i + 1;
-        }
+    pub fn col(&self) -> usize {
+        self.col
+    }
 
-        write!(f, "{stack_str}")
+    pub fn swaps(&self) -> usize {
+        self.swaps
     }
 }
 

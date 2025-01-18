@@ -16,10 +16,10 @@ fn main() {
     let longest = board.get_longest_word(&tree);
     let best = board.get_best_word(&tree);
 
-    println!("Longest: {} for {} points\n", longest.0, longest.1);
-    println!("{}", best.0);
+    println!("Longest: {} for {} points\n", longest.word(), longest.points());
+    println!("{}", best.word());
 
-    if best.1 < 30 {
+    if best.points() < 30 {
         println!("Recommendation: Reshuffle.");
     } 
 
