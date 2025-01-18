@@ -3,6 +3,7 @@ use std::fmt;
 pub struct WordResult {
     word: String,
     points: usize,
+    spaces: Vec<Space>,
     swaps: Vec<Swap>
 }
 
@@ -13,11 +14,18 @@ pub struct Swap {
     col: usize
 }
 
+pub struct Space {
+    char: char,
+    row: usize,
+    col: usize
+}
+
 impl WordResult {
-    pub fn new(word: String, points: usize, swaps: Vec<Swap>) -> WordResult {
+    pub fn new(word: String, points: usize, swaps: Vec<Swap>, spaces: Vec<Space>) -> WordResult {
         WordResult {
             word,
             points,
+            spaces,
             swaps
         }
     }
@@ -28,6 +36,10 @@ impl WordResult {
 
     pub fn points(&self) -> usize {
         self.points
+    }
+
+    pub fn spaces(&self) -> &Vec<Space> {
+        &self.spaces
     }
 
     pub fn swaps(&self) -> &Vec<Swap> {
@@ -49,6 +61,24 @@ impl Swap {
 impl fmt::Display for Swap {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Swap {} for {} at [{}, {}]", self.original_char, self.new_char, self.row, self.col)
+    }
+}
+
+impl Space {
+    pub fn new(char: char, row: usize, col: usize) -> Space {
+        Space {
+            char,
+            row,
+            col
+        }
+    }
+
+    pub fn row(&self) -> usize {
+        self.row
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
     }
 }
 

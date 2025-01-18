@@ -15,13 +15,19 @@ fn main() {
 
     let longest = board.get_longest_word(&tree);
     let best = board.get_best_word(&tree);
+    let best_words = board.get_best_words(&tree, 10);
 
-    println!("Longest: {} for {} points\n", longest.word(), longest.points());
-    println!("{}", best.word());
+    println!("Longest: {} for {} points", longest.word(), longest.points());
+    println!("Best: {} for {} points", best.word(), best.points());
 
     if best.points() < 30 {
         println!("Recommendation: Reshuffle.");
-    } 
+    }
+
+    println!("\n10 Best words:");
+    for word in best_words {
+        println!("{} for {} points", word.word(), word.points());
+    }
 
 
     println!("Press Enter to exit.");

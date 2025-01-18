@@ -5,7 +5,7 @@ use crate::word_tree::*;
 use crate::letter;
 use crossbeam::{self, thread::ScopedJoinHandle};
 use crate::double_stack::DoubleStack;
-use crate::word_result::{WordResult, Swap};
+use crate::word_result::{WordResult, Swap, Space};
 
 
 pub struct Board {
@@ -69,22 +69,35 @@ impl Board{
             }
         }
 
+        let spaces = get_letter_spaces_for_word(longest_cells);
+
         let total = self.get_point_total(longest_cells);
 
-        WordResult::new(longest, total, Vec::new())
+        WordResult::new(longest, total, Vec::new(), spaces)
     }
 
     pub fn get_best_word(&self, tree: &WordTree) -> WordResult {
-        let best = self.get_best_word_spaces(tree);
+        let best = (self.get_best_words_spaces(tree, 1)).remove(0);
         let word: Vec<LetterSpace> = best.0;
-        let word_str = get_word_from_letter_spaces(&word);
+
+        self.get_result_from_letters(word, best.1)
+    }
+
+    pub fn get_best_words(&self, tree: &WordTree, count: usize) -> Vec<WordResult> {
+        let words = self.get_best_words_spaces(tree, count);
+        let mut results: Vec<WordResult> = Vec::new();
+        for word in words {
+            results.push(self.get_result_from_letters(word.0, word.1))
+        }
+
+        results
+    }
+
+    pub fn get_result_from_letters(&self, word: Vec<LetterSpace>, points: usize) -> WordResult {
         let grid = &self.grid;
-
-        //print_letter_spaces_for_word(&word);
-
         let mut swaps: Vec<Swap> = Vec::new();
         
-        for letter in word {
+        for letter in &word {
             let original = grid[letter.row][letter.col].character;
             
             if letter.character() != original {
@@ -92,44 +105,81 @@ impl Board{
             }
         }
 
-        
+        let spaces = get_letter_spaces_for_word(&word);
 
-        //(result, best.1);
-        WordResult::new(word_str, best.1, swaps)
-    }
-
-    pub fn get_best_words(&self, tree: &WordTree, count: usize) -> Vec<WordResult> {
-        Vec::new()
+        WordResult::new(get_word_from_letter_spaces(&word), points, swaps, spaces)
     }
 
     pub fn get_best_word_string(&self, tree: &WordTree) -> (String, usize) {
-        let result = self.get_best_word_spaces(tree);
+        let result = self.get_best_words_spaces(tree, 1).remove(0);
 
         (get_word_from_letter_spaces(&result.0), result.1)
     }
 
-    fn get_best_word_spaces(&self, tree: &WordTree) -> (Vec<LetterSpace>, usize) {
+    fn get_best_words_spaces(&self, tree: &WordTree, count: usize) -> Vec<(Vec<LetterSpace>, usize)> {
+        if count == 0 {
+            return Vec::new();
+        }
+
         let words = if self.multithreading {
             self.get_all_possible_words_threaded(tree)
         } else {
             self.get_all_possible_words(tree)
         };
+
+
+        let mut words_result: Vec<(Vec<LetterSpace>, usize)> = Vec::with_capacity(count);
+
+        // Keep n highest values
+        /*
+         * Keep track of current lowest point value in Vec and index
+         * Whenever we find a word with a point total higher than that,
+         * replace it and search for new min val and index.
+         * 
+         */
         
-        
-        let mut highest_point_total = 0;
         let mut point_total_temp;
-        let mut cur_word: &Vec<LetterSpace> = &Vec::new();
+        let mut words_iter = words.into_iter();
 
-        for word in &words {
-            point_total_temp = self.get_point_total(&word);
 
-            if point_total_temp > highest_point_total {
-                highest_point_total = point_total_temp;
-                cur_word = &word;
+        // Fill results
+        for i in 0..count {
+            match words_iter.next() {
+                Some(word) => {
+                    let points = self.get_point_total(&word);
+                    words_result.push((word, points));
+                }
+                None => ()
             }
         }
 
-        (cur_word.to_vec(), highest_point_total)
+        let mut min_high_point_total: usize = words_result[0].1;
+        let mut min_high_index: usize = 0;
+
+        for (index, word) in words_result.iter().enumerate() {
+            if word.1 < min_high_point_total {
+                min_high_point_total = word.1;
+                min_high_index = index
+            }
+        }
+
+        for word in words_iter {
+            point_total_temp = self.get_point_total(&word);
+
+            if point_total_temp > min_high_point_total {
+                words_result[min_high_index] = (word, point_total_temp);
+                min_high_point_total = point_total_temp;
+                for (index, word) in words_result.iter().enumerate() {
+                    if word.1 < min_high_point_total {
+                        min_high_point_total = word.1;
+                        min_high_index = index
+                    }
+                }
+            }
+        }
+
+        words_result.sort_by(|a, b| b.1.cmp(&a.1));
+        words_result
     }
 
 
@@ -458,8 +508,12 @@ fn add_swap_elements(node: &LetterNode, stack: &mut DoubleStack<StackElement>, r
     }
 }
 
-fn print_letter_spaces_for_word(word: &Vec<LetterSpace>) {
+fn get_letter_spaces_for_word(word: &Vec<LetterSpace>) -> Vec<Space>{
+    let mut spaces: Vec<Space> = Vec::new();
+
     for letter in word {
-        println!("{0} at {1}, {2}", letter.character(), letter.row() + 1, letter.col() + 1);
+        spaces.push(Space::new(letter.character(), letter.row() + 1, letter.col() + 1));
     }
+
+    spaces
 }
