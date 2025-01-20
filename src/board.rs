@@ -143,7 +143,7 @@ impl Board{
 
 
         // Fill results
-        for i in 0..count {
+        for _ in 0..count {
             match words_iter.next() {
                 Some(word) => {
                     let points = self.get_point_total(&word);
