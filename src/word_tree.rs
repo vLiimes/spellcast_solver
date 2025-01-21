@@ -2,12 +2,12 @@ use std::fmt;
 use std::fs::read_to_string;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct WordTree {
     root: LetterNode,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct LetterNode{
     letter: LetterState,
     children: Vec<LetterNode>,
@@ -16,13 +16,13 @@ pub struct LetterNode{
 
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum LetterState{
     Present(char),
     Root,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub enum NodeState{
     WordEnd,
     WordMiddle
