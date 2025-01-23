@@ -59,7 +59,7 @@ impl Board{
     pub fn get_longest_word(&self, tree: &WordTree) -> WordResult {
 
         let words = self.get_all_possible_words(tree);
-        let mut longest = String::from("ap");
+        let mut longest = String::new();
         let mut longest_cells: &Vec<LetterSpace> = &Vec::new();
 
         for word in &words {
@@ -104,6 +104,8 @@ impl Board{
                 swaps.push(Swap::new(original, letter.character(), letter.row + 1, letter.col + 1));
             }
         }
+
+        
 
         let spaces = get_letter_spaces_for_word(&word);
 
