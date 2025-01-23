@@ -1,7 +1,7 @@
 use std::fmt;
 use serde::{Serialize, Deserialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct WordResult {
     word: String,
     points: usize,
@@ -9,7 +9,7 @@ pub struct WordResult {
     swaps: Vec<Swap>
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Swap {
     original_char: char,
     new_char: char,
@@ -17,7 +17,7 @@ pub struct Swap {
     col: usize
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Space {
     char: char,
     row: usize,
