@@ -30,13 +30,13 @@ pub enum StackElement<'a> {
 }
 
 impl Board{
-    pub fn build_board_from_file(filename: &str) -> Board {
+    pub fn build_board_from_file(filename: &str) -> Result<Board, String> {
 
         Board::build_board_from_str(&read_to_string(filename).unwrap())
     }
 
     // TODO: Remove any panics.
-    pub fn build_board_from_str(board: &str) -> Board  {
+    pub fn build_board_from_str(board: &str) -> Result<Board, String>  {
         let mut board_vec: Vec<Vec<Letter>> = Vec::new();
         let size = board.lines().count();
 
@@ -44,7 +44,14 @@ impl Board{
             let mut new_row = Vec::new();
             for space in line.split_ascii_whitespace() {
                 match Letter::build_letter_from_input_word(space) {
-                    Ok(letter) => new_row.push(letter),
+                    Ok(letter) => {
+                        if !letter::get_letter_value_map().contains_key(&letter.character) {
+                            return Err(String::from("Only English characters are allowed in board input."));
+                        }
+
+                        new_row.push(letter);
+
+                    },
                     // For now just pretend it's fine unless this causes
                     // huge issues. On user to notice if it's wrong
                     Err(_) => ()
@@ -53,7 +60,7 @@ impl Board{
             board_vec.push(new_row);
         }
 
-        Board {size, grid: board_vec, swaps: 0, multithreading: false}
+        Ok(Board {size, grid: board_vec, swaps: 0, multithreading: false})
     }
 
     pub fn get_longest_word(&self, tree: &WordTree) -> WordResult {

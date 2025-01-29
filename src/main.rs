@@ -4,7 +4,7 @@ use std::io;
 
 fn main() {
     let tree = WordTree::build_from_file("./data/dictionaries/dictionary.txt");
-    let mut board = Board::build_board_from_file("./data/boards/basic_board.txt");
+    let mut board = Board::build_board_from_file("./data/boards/basic_board.txt").unwrap();
 
     println!("Number of swaps?");
     let mut num = String::new();
