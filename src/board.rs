@@ -45,7 +45,7 @@ impl Board{
             for space in line.split_ascii_whitespace() {
                 match Letter::build_letter_from_input_word(space) {
                     Ok(letter) => {
-                        if !letter::get_letter_value_map().contains_key(&letter.character) {
+                        if !letter::get_letter_value_map().contains_key(&letter.character.to_ascii_lowercase()) {
                             return Err(String::from("Only English characters are allowed in board input."));
                         }
 
