@@ -27,7 +27,7 @@ impl Letter{
 
     pub fn build_letter_from_input_word(word: &str) -> Result<Letter, String> {
         let first_char = match word.chars().nth(0) {
-            Some(this_char) => this_char,
+            Some(this_char) => this_char.to_ascii_lowercase(),
             None => {
                 return Err(format!(
                     "Unexpected empty space in board."
