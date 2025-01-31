@@ -60,6 +60,22 @@ impl Swap {
             col
         }
     }
+
+    pub fn original_char(&self) -> char {
+        self.original_char
+    }
+
+    pub fn new_char(&self) -> char {
+        self.new_char
+    }
+
+    pub fn row(&self) -> usize {
+        self.row
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
+    }
 }
 
 impl fmt::Display for Swap {
