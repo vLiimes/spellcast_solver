@@ -93,6 +93,10 @@ impl Space {
         }
     }
 
+    pub fn this_char(&self) -> char {
+        self.char
+    }
+
     pub fn row(&self) -> usize {
         self.row
     }
